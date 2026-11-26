@@ -1,0 +1,98 @@
+<?php
+require_once __DIR__ . '/../models/Cita.php';
+require_once __DIR__ . '/../models/Mascota.php';
+require_once __DIR__ . '/../models/Usuario.php';
+
+class CitaController {
+    private $citaModel;
+    private $mascotaModel;
+    private $usuarioModel;
+
+    public function __construct($db) {
+        $this->citaModel = new Cita($db);
+        $this->mascotaModel = new Mascota($db);
+        $this->usuarioModel = new Usuario($db);
+    }
+
+    public function dashboard() {
+        if (!isset($_SESSION['usuario'])) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        $usuario = $_SESSION['usuario'];
+        $veterinarios = $this->usuarioModel->listarVeterinarios();
+
+        if ($usuario['rol'] === 'cliente') {
+            $citas = $this->citaModel->listarPorDueno($usuario['id']);
+            $mascotas = $this->mascotaModel->listarPorDueno($usuario['id']);
+        } else {
+            $citas = $this->citaModel->listarTodas();
+            $mascotas = [];
+        }
+
+        require __DIR__ . '/../views/dashboard/index.php';
+    }
+
+    // [Sprint 2 - RF03]: Devuelve las horas libres para el calendario (AJAX)
+    public function horasDisponibles() {
+        header('Content-Type: application/json');
+
+        $idVeterinario = $_GET['id_veterinario'] ?? null;
+        $fecha = $_GET['fecha'] ?? null;
+
+        $horariosBase = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+
+        if (!$idVeterinario || !$fecha) {
+            echo json_encode([]);
+            exit;
+        }
+
+        $ocupadas = $this->citaModel->obtenerHorasOcupadas($idVeterinario, $fecha);
+        $disponibles = array_values(array_diff($horariosBase, $ocupadas));
+
+        echo json_encode($disponibles);
+        exit;
+    }
+
+    // [Sprint 2 - RF03]: Procesa y guarda la solicitud de cita del cliente
+    public function agendarCita() {
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'cliente') {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $idMascota     = $_POST['id_mascotas'] ?? '';
+            $idVeterinario = $_POST['id_veterinario'] ?? '';
+            $fecha         = $_POST['fecha'] ?? '';
+            $hora          = $_POST['hora'] ?? '';
+            $motivo        = trim($_POST['motivo'] ?? '');
+
+            // Unir fecha y hora para el campo DATETIME de MySQL (ej: 2026-11-27 10:00:00)
+            $fechaHora = $fecha . ' ' . $hora . ':00';
+
+            // Validar campos obligatorios
+            if (empty($idMascota) || empty($idVeterinario) || empty($fecha) || empty($hora) || empty($motivo)) {
+                header('Location: index.php?action=dashboard&error=campos_vacios');
+                exit;
+            }
+
+            // Validar que el horario siga disponible
+            if (!$this->citaModel->estaDisponible($idVeterinario, $fechaHora)) {
+                header('Location: index.php?action=dashboard&error=horario_ocupado');
+                exit;
+            }
+
+            // Guardar en la base de datos (4 parámetros alineados con Cita.php)
+            $guardado = $this->citaModel->crear($idMascota, $idVeterinario, $fechaHora, $motivo);
+
+            if ($guardado) {
+                header('Location: index.php?action=dashboard&success=cita_agendada');
+            } else {
+                header('Location: index.php?action=dashboard&error=error_guardar');
+            }
+            exit;
+        }
+    }
+}
