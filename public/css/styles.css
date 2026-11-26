@@ -1,0 +1,83 @@
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+
+.card {
+    border: none;
+    border-radius: 0.65rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+
+.table {
+    background-color: #fff;
+    border-radius: 0.65rem;
+    overflow: hidden;
+}
+
+.table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #555;
+    background-color: #eef1f5;
+    padding: 14px;
+}
+
+.table td {
+    padding: 12px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.table tbody tr:hover {
+    background-color: #f5f8fc;
+}
+
+/* BOTONES */
+.btn {
+    border-radius: 0.5rem;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+
+.form-control,
+.form-select {
+    border-radius: 0.5rem;
+    padding: 10px;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #6c9bd2;
+    box-shadow: 0 0 0 0.2rem rgba(108, 155, 210, 0.2);
+}
+
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+}
