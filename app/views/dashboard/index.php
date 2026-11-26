@@ -1,9 +1,17 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
-<!-- Alertas de respuesta del RF03 -->
-<?php if (isset($_GET['success']) &&$_GET['success'] === 'cita_agendada'): ?>
+<!-- Alertas de respuesta (RF03 Cliente y RF05 Recepcionista) -->
+<?php if (isset($_GET['success'])): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> ¡Cita solicitada correctamente! Su estado actual es <strong>Pendiente</strong>.
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <?php
+            echo match($_GET['success']) {
+                'cita_agendada'      => '¡Cita solicitada correctamente! Su estado actual es <strong>Pendiente</strong>.',
+                'estado_actualizado' => 'El estado de la cita fue actualizado correctamente.',
+                'cita_reagendada'    => 'La cita fue reagendada y confirmada correctamente.',
+                default              => 'Operación realizada con éxito.'
+            };
+        ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 <?php endif; ?>
@@ -15,7 +23,8 @@
             echo match($_GET['error']) {
                 'horario_ocupado' => 'El horario seleccionado acaba de ser ocupado. Por favor elige otro.',
                 'campos_vacios'   => 'Por favor completa todos los campos obligatorios.',
-                default           => 'Ocurrió un error al registrar la cita.'
+                'datos_invalidos' => 'Los datos enviados no son válidos.',
+                default           => 'Ocurrió un error al procesar la solicitud.'
             };
         ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
@@ -52,7 +61,7 @@
                 <p class="text-muted mb-0">No tienes mascotas registradas aún.</p>
             <?php else: ?>
                 <div class="row g-3">
-                    <?php foreach ($mascotas as$m): ?>
+                    <?php foreach ($mascotas as $m): ?>
                         <div class="col-md-4">
                             <div class="border rounded p-3 bg-light">
                                 <h6 class="fw-bold mb-1"><?= htmlspecialchars($m['nombre']) ?></h6>
@@ -97,7 +106,7 @@
                 <?php if (empty($citas)): ?>
                     <tr><td colspan="7" class="text-center text-muted py-4">No hay citas registradas.</td></tr>
                 <?php else: ?>
-                    <?php foreach ($citas as$c): ?>
+                    <?php foreach ($citas as $c): ?>
                         <?php
                             $badgeClass = match($c['estado']) {
                                 'pendiente'  => 'bg-warning text-dark',
@@ -121,9 +130,40 @@
                             <td><span class="badge <?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($c['estado']) ?></span></td>
                             <td>
                                 <?php if ($usuario['rol'] === 'recepcionista'): ?>
-                                    <!-- TODO [Sprint 3 - RF05]: Conectar botones de confirmar / cancelar -->
-                                    <button class="btn btn-sm btn-outline-success" onclick="mostrarAlertaSprint('Sprint 3 - RF05: Confirmar cita #<?= $c['id'] ?>')">Confirmar</button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="mostrarAlertaSprint('Sprint 3 - RF05: Cancelar cita #<?= $c['id'] ?>')">Cancelar</button>
+                                    <?php if ($c['estado'] !== 'atendida' && $c['estado'] !== 'cancelada'): ?>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <?php if ($c['estado'] === 'pendiente'): ?>
+                                                <form action="index.php?action=cambiarEstadoCita" method="POST" class="d-inline">
+                                                    <input type="hidden" name="id_cita" value="<?= (int)$c['id'] ?>">
+                                                    <input type="hidden" name="estado" value="confirmada">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Aceptar cita">
+                                                        <i class="bi bi-check-lg"></i> Aceptar
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary btn-reagendar"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalReagendarCita"
+                                                    data-id="<?= (int)$c['id'] ?>"
+                                                    data-vet="<?= (int)$c['id_veterinario'] ?>"
+                                                    data-mascota="<?= htmlspecialchars($c['mascota']) ?>"
+                                                    data-vetnombre="<?= htmlspecialchars($c['veterinario']) ?>">
+                                                <i class="bi bi-calendar-event"></i> Reagendar
+                                            </button>
+
+                                            <form action="index.php?action=cambiarEstadoCita" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas cancelar esta cita?');">
+                                                <input type="hidden" name="id_cita" value="<?= (int)$c['id'] ?>">
+                                                <input type="hidden" name="estado" value="cancelada">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar cita">
+                                                    <i class="bi bi-x-lg"></i> Cancelar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="small text-muted">Sin acciones disponibles</span>
+                                    <?php endif; ?>
                                 <?php elseif ($usuario['rol'] === 'veterinario'): ?>
                                     <!-- TODO [Sprint 3 - RF06]: Conectar modal para registrar diagnóstico y marcar atendida -->
                                     <button class="btn btn-sm btn-outline-primary" onclick="mostrarAlertaSprint('Sprint 3 - RF06: Atender cita #<?= $c['id'] ?>')">Atender</button>
@@ -162,7 +202,7 @@
                             <label for="id_mascotas" class="form-label fw-semibold">Mascota</label>
                             <select class="form-select" id="id_mascotas" name="id_mascotas" required>
                                 <option value="">Seleccione una mascota...</option>
-                                <?php foreach ($mascotas as$m): ?>
+                                <?php foreach ($mascotas as $m): ?>
                                     <option value="<?= (int)$m['id'] ?>">
                                         <?= htmlspecialchars($m['nombre']) ?> (<?= htmlspecialchars($m['especie']) ?>)
                                     </option>
@@ -175,7 +215,7 @@
                             <label for="id_veterinario" class="form-label fw-semibold">Veterinario</label>
                             <select class="form-select" id="id_veterinario" name="id_veterinario" required>
                                 <option value="">Seleccione un veterinario...</option>
-                                <?php foreach ($veterinarios as$v): ?>
+                                <?php foreach ($veterinarios as $v): ?>
                                     <option value="<?= (int)$v['id'] ?>">
                                         <?= htmlspecialchars($v['nombre']) ?>
                                     </option>
@@ -209,6 +249,49 @@
                     <?php if (!empty($mascotas)): ?>
                         <button type="submit" class="btn btn-primary">Guardar Cita</button>
                     <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- MODAL RF05: Reagendar Cita (Solo visible para recepcionista) -->
+<?php if ($usuario['rol'] === 'recepcionista'): ?>
+<div class="modal fade" id="modalReagendarCita" tabindex="-1" aria-labelledby="modalReagendarCitaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalReagendarCitaLabel">
+                    <i class="bi bi-calendar-event text-primary me-2"></i>Reagendar Cita
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="index.php?action=reagendarCita" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="id_cita" id="reagendar_id_cita">
+                    <input type="hidden" name="id_veterinario" id="reagendar_id_veterinario">
+
+                    <div class="alert alert-light border mb-3 small">
+                        <div><strong>Mascota:</strong> <span id="reagendar_info_mascota"></span></div>
+                        <div><strong>Veterinario:</strong> <span id="reagendar_info_vet"></span></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reagendar_fecha" class="form-label fw-semibold">Nueva Fecha</label>
+                        <input type="date" class="form-control" id="reagendar_fecha" name="fecha" min="<?= date('Y-m-d') ?>" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reagendar_hora" class="form-label fw-semibold">Nueva Hora Disponible</label>
+                        <select class="form-select" id="reagendar_hora" name="hora" required>
+                            <option value="">Seleccione una fecha primero...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Nuevo Horario</button>
                 </div>
             </form>
         </div>

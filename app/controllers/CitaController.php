@@ -95,4 +95,62 @@ class CitaController {
             exit;
         }
     }
+    // [Sprint 3 - RF05]: Confirmar o cancelar cita (Recepcionista)
+    public function cambiarEstadoCita() {
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'recepcionista') {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $idCita = $_POST['id_cita'] ?? '';
+            $estado = $_POST['estado'] ?? '';
+
+            if (empty($idCita) || !in_array($estado, ['confirmada', 'cancelada'])) {
+                header('Location: index.php?action=dashboard&error=datos_invalidos');
+                exit;
+            }
+
+            if ($this->citaModel->actualizarEstado($idCita, $estado)) {
+                header('Location: index.php?action=dashboard&success=estado_actualizado');
+            } else {
+                header('Location: index.php?action=dashboard&error=error_guardar');
+            }
+            exit;
+        }
+    }
+
+    // [Sprint 3 - RF05]: Reagendar cita verificando disponibilidad del veterinario (Recepcionista)
+    public function reagendarCita() {
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'recepcionista') {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $idCita        = $_POST['id_cita'] ?? '';
+            $idVeterinario = $_POST['id_veterinario'] ?? '';
+            $fecha         = $_POST['fecha'] ?? '';
+            $hora          = $_POST['hora'] ?? '';
+
+            if (empty($idCita) || empty($idVeterinario) || empty($fecha) || empty($hora)) {
+                header('Location: index.php?action=dashboard&error=campos_vacios');
+                exit;
+            }
+
+            $nuevaFechaHora = $fecha . ' ' . $hora . ':00';
+
+            if (!$this->citaModel->estaDisponible($idVeterinario, $nuevaFechaHora)) {
+                header('Location: index.php?action=dashboard&error=horario_ocupado');
+                exit;
+            }
+
+            if ($this->citaModel->reagendar($idCita, $nuevaFechaHora)) {
+                header('Location: index.php?action=dashboard&success=cita_reagendada');
+            } else {
+                header('Location: index.php?action=dashboard&error=error_guardar');
+            }
+            exit;
+        }
+    }
 }

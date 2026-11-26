@@ -77,4 +77,25 @@ class Cita {
         
         return $stmt->execute();
     }
+    // [Sprint 3 - RF05]: Cambiar estado de una cita (confirmada / cancelada)
+    public function actualizarEstado($idCita, $nuevoEstado) {
+        $query = "UPDATE " . $this->table . " 
+                  SET estado = :estado 
+                  WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':estado', $nuevoEstado, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $idCita, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    // [Sprint 3 - RF05]: Reagendar fecha/hora y confirmar la cita
+    public function reagendar($idCita, $nuevaFechaHora) {
+        $query = "UPDATE " . $this->table . " 
+                  SET fecha_hora = :fecha_hora, estado = 'confirmada' 
+                  WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':fecha_hora', $nuevaFechaHora, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $idCita, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

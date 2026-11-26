@@ -78,3 +78,55 @@ document.addEventListener('DOMContentLoaded', () => {
 function mostrarAlertaSprint(mensaje) {
     alert('Tarea pendiente por desarrollar:\n' + mensaje);
 }
+// [Sprint 3 - RF05]: Modal Reagendar Cita (Recepcionista)
+    const botonesReagendar = document.querySelectorAll('.btn-reagendar');
+    const reagendarIdCita = document.getElementById('reagendar_id_cita');
+    const reagendarIdVet = document.getElementById('reagendar_id_veterinario');
+    const reagendarInfoMascota = document.getElementById('reagendar_info_mascota');
+    const reagendarInfoVet = document.getElementById('reagendar_info_vet');
+    const reagendarFecha = document.getElementById('reagendar_fecha');
+    const reagendarHora = document.getElementById('reagendar_hora');
+
+    if (botonesReagendar.length > 0 && reagendarFecha && reagendarHora) {
+        botonesReagendar.forEach(btn => {
+            btn.addEventListener('click', () => {
+                reagendarIdCita.value = btn.dataset.id;
+                reagendarIdVet.value = btn.dataset.vet;
+                reagendarInfoMascota.textContent = btn.dataset.mascota;
+                reagendarInfoVet.textContent = btn.dataset.vetnombre;
+                reagendarFecha.value = '';
+                reagendarHora.innerHTML = '<option value="">Seleccione una fecha primero...</option>';
+            });
+        });
+
+        reagendarFecha.addEventListener('change', async () => {
+            const idVeterinario = reagendarIdVet.value;
+            const fecha = reagendarFecha.value;
+
+            if (!idVeterinario || !fecha) return;
+
+            reagendarHora.innerHTML = '<option value="">Cargando horarios...</option>';
+
+            try {
+                const response = await fetch(`index.php?action=horasDisponibles&id_veterinario=${encodeURIComponent(idVeterinario)}&fecha=${encodeURIComponent(fecha)}`);
+                const horas = await response.json();
+
+                reagendarHora.innerHTML = '';
+
+                if (horas.length === 0) {
+                    reagendarHora.innerHTML = '<option value="">No hay horarios disponibles</option>';
+                } else {
+                    reagendarHora.innerHTML = '<option value="">Seleccione una hora...</option>';
+                    horas.forEach(hora => {
+                        const option = document.createElement('option');
+                        option.value = hora;
+                        option.textContent = hora;
+                        reagendarHora.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al cargar horas para reagendar:', error);
+                reagendarHora.innerHTML = '<option value="">Error al cargar horarios</option>';
+            }
+        });
+    }

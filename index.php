@@ -41,4 +41,10 @@ switch ($action) {
     default:
         $citaController->dashboard();
         break;
+        case 'cambiarEstadoCita':
+        $citaController->cambiarEstadoCita();
+        break;
+    case 'reagendarCita':
+        $citaController->reagendarCita();
+        break;
 }
