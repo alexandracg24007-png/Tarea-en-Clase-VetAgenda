@@ -143,13 +143,14 @@
                                             <?php endif; ?>
 
                                             <button type="button"
-                                                    class="btn btn-sm btn-outline-primary btn-reagendar"
+                                                    class="btn btn-sm btn-outline-primary"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalReagendarCita"
                                                     data-id="<?= (int)$c['id'] ?>"
                                                     data-vet="<?= (int)$c['id_veterinario'] ?>"
                                                     data-mascota="<?= htmlspecialchars($c['mascota']) ?>"
-                                                    data-vetnombre="<?= htmlspecialchars($c['veterinario']) ?>">
+                                                    data-vetnombre="<?= htmlspecialchars($c['veterinario']) ?>"
+                                                    onclick="prepararReagendar(this)">
                                                 <i class="bi bi-calendar-event"></i> Reagendar
                                             </button>
 
@@ -279,7 +280,7 @@
 
                     <div class="mb-3">
                         <label for="reagendar_fecha" class="form-label fw-semibold">Nueva Fecha</label>
-                        <input type="date" class="form-control" id="reagendar_fecha" name="fecha" min="<?= date('Y-m-d') ?>" required>
+                        <input type="date" class="form-control" id="reagendar_fecha" name="fecha" min="<?= date('Y-m-d') ?>" onchange="cargarHorasReagendar()" required>
                     </div>
 
                     <div class="mb-3">
@@ -297,6 +298,49 @@
         </div>
     </div>
 </div>
+
+<script>
+function prepararReagendar(btn) {
+    document.getElementById('reagendar_id_cita').value = btn.getAttribute('data-id');
+    document.getElementById('reagendar_id_veterinario').value = btn.getAttribute('data-vet');
+    document.getElementById('reagendar_info_mascota').textContent = btn.getAttribute('data-mascota');
+    document.getElementById('reagendar_info_vet').textContent = btn.getAttribute('data-vetnombre');
+    document.getElementById('reagendar_fecha').value = '';
+    document.getElementById('reagendar_hora').innerHTML = '<option value="">Seleccione una fecha primero...</option>';
+}
+
+async function cargarHorasReagendar() {
+    const idVeterinario = document.getElementById('reagendar_id_veterinario').value;
+    const fecha = document.getElementById('reagendar_fecha').value;
+    const selectHora = document.getElementById('reagendar_hora');
+
+    if (!idVeterinario || !fecha) return;
+
+    selectHora.innerHTML = '<option value="">Cargando horarios...</option>';
+
+    try {
+        const response = await fetch(`index.php?action=horasDisponibles&id_veterinario=${encodeURIComponent(idVeterinario)}&fecha=${encodeURIComponent(fecha)}`);
+        const horas = await response.json();
+
+        selectHora.innerHTML = '';
+
+        if (horas.length === 0) {
+            selectHora.innerHTML = '<option value="">No hay horarios disponibles</option>';
+        } else {
+            selectHora.innerHTML = '<option value="">Seleccione una hora...</option>';
+            horas.forEach(hora => {
+                const option = document.createElement('option');
+                option.value = hora;
+                option.textContent = hora;
+                selectHora.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar horas para reagendar:', error);
+        selectHora.innerHTML = '<option value="">Error al cargar horarios</option>';
+    }
+}
+</script>
 <?php endif; ?>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

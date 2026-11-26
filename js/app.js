@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // [Sprint 2 - RF03]: Cargar horas disponibles dinámicamente al elegir veterinario y fecha
+    // [Sprint 2 - RF03]: Cargar horas disponibles dinámicamente al elegir veterinario y fecha (Cliente)
     const selectVeterinario = document.getElementById('id_veterinario');
     const inputFecha = document.getElementById('fecha');
     const selectHora = document.getElementById('hora');
@@ -72,14 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
         selectVeterinario.addEventListener('change', cargarHorasDisponibles);
         inputFecha.addEventListener('change', cargarHorasDisponibles);
     }
-});
 
-// Función auxiliar para guiar a los estudiantes en los componentes pendientes
-function mostrarAlertaSprint(mensaje) {
-    alert('Tarea pendiente por desarrollar:\n' + mensaje);
-}
-// [Sprint 3 - RF05]: Modal Reagendar Cita (Recepcionista)
-    const botonesReagendar = document.querySelectorAll('.btn-reagendar');
+    // [Sprint 3 - RF05]: Modal Reagendar Cita (Recepcionista)
+    const modalReagendar = document.getElementById('modalReagendarCita');
     const reagendarIdCita = document.getElementById('reagendar_id_cita');
     const reagendarIdVet = document.getElementById('reagendar_id_veterinario');
     const reagendarInfoMascota = document.getElementById('reagendar_info_mascota');
@@ -87,16 +82,17 @@ function mostrarAlertaSprint(mensaje) {
     const reagendarFecha = document.getElementById('reagendar_fecha');
     const reagendarHora = document.getElementById('reagendar_hora');
 
-    if (botonesReagendar.length > 0 && reagendarFecha && reagendarHora) {
-        botonesReagendar.forEach(btn => {
-            btn.addEventListener('click', () => {
-                reagendarIdCita.value = btn.dataset.id;
-                reagendarIdVet.value = btn.dataset.vet;
-                reagendarInfoMascota.textContent = btn.dataset.mascota;
-                reagendarInfoVet.textContent = btn.dataset.vetnombre;
-                reagendarFecha.value = '';
-                reagendarHora.innerHTML = '<option value="">Seleccione una fecha primero...</option>';
-            });
+    if (modalReagendar && reagendarFecha && reagendarHora) {
+        modalReagendar.addEventListener('show.bs.modal', (event) => {
+            const btn = event.relatedTarget;
+            if (!btn) return;
+
+            reagendarIdCita.value = btn.getAttribute('data-id');
+            reagendarIdVet.value = btn.getAttribute('data-vet');
+            reagendarInfoMascota.textContent = btn.getAttribute('data-mascota');
+            reagendarInfoVet.textContent = btn.getAttribute('data-vetnombre');
+            reagendarFecha.value = '';
+            reagendarHora.innerHTML = '<option value="">Seleccione una fecha primero...</option>';
         });
 
         reagendarFecha.addEventListener('change', async () => {
@@ -130,3 +126,9 @@ function mostrarAlertaSprint(mensaje) {
             }
         });
     }
+});
+
+// Función auxiliar para guiar a los estudiantes en los componentes pendientes
+function mostrarAlertaSprint(mensaje) {
+    alert('Tarea pendiente por desarrollar:\n' + mensaje);
+}
