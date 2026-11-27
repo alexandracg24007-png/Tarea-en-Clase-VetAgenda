@@ -12,6 +12,10 @@ class AuthController {
         require __DIR__ . '/../views/auth/login.php';
     }
 
+    public function mostrarRegistro($errores = [], $old = []) {
+        require __DIR__ . '/../views/auth/register.php';
+    }
+
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email'] ?? '');
@@ -33,6 +37,50 @@ class AuthController {
             }
         } else {
             $this->mostrarLogin();
+        }
+    }
+
+    public function registrar() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nombre          = trim($_POST['nombre'] ?? '');
+            $correo          = trim($_POST['correo'] ?? '');
+            $password        = $_POST['password'] ?? '';
+            $passwordConfirm = $_POST['password_confirm'] ?? '';
+
+            $errores = [];
+            $old = ['nombre' => $nombre, 'correo' => $correo];
+
+            if (mb_strlen($nombre) < 3) {
+                $errores[] = 'El nombre debe tener al menos 3 caracteres.';
+            }
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                $errores[] = 'Ingresa un correo electrónico válido.';
+            }
+            if (strlen($password) < 6) {
+                $errores[] = 'La contraseña debe tener al menos 6 caracteres.';
+            }
+            if ($password !== $passwordConfirm) {
+                $errores[] = 'Las contraseñas no coinciden.';
+            }
+            if (empty($errores) && $this->usuarioModel->buscarPorEmail($correo)) {
+                $errores[] = 'Este correo electrónico ya está registrado.';
+            }
+
+            if (!empty($errores)) {
+                $this->mostrarRegistro($errores, $old);
+                return;
+            }
+
+            $hash = password_hash($password, PASSWORD_BCRYPT);
+
+            if ($this->usuarioModel->crearCliente($nombre, $correo, $hash)) {
+                header('Location: index.php?action=login&registrado=1');
+                exit;
+            } else {
+                $this->mostrarRegistro(['Ocurrió un error al crear la cuenta. Intenta nuevamente.'], $old);
+            }
+        } else {
+            $this->mostrarRegistro();
         }
     }
 

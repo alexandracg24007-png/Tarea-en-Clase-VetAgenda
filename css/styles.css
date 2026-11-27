@@ -1,14 +1,148 @@
+/* =========================================
+   VetAgenda - Estilos Personalizados
+   ========================================= */
+
+:root {
+    --vet-bg: #f4f7fb;
+    --vet-primary: #0d6efd;
+    --vet-primary-dark: #0a58ca;
+    --vet-text: #1e293b;
+    --vet-muted: #64748b;
+    --vet-border: #e2e8f0;
+}
+
 body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--vet-bg);
+    color: var(--vet-text);
+    line-height: 1.5;
 }
 
+/* Barra superior (Navbar) */
+.navbar {
+    box-shadow: 0 2px 10px rgba(13, 110, 253, 0.15);
+}
+
+/* Tarjetas principales (Login, Registro, Mascotas, Tabla) */
 .card {
-    border-radius: 0.65rem;
+    border-radius: 0.85rem;
+    border: 1px solid var(--vet-border) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.table th {
-    font-size: 0.85rem;
+.card-header {
+    border-bottom: 1px solid var(--vet-border);
+    padding: 0.95rem 1.25rem;
+    font-size: 0.98rem;
+    color: var(--vet-text);
+    border-top-left-radius: 0.85rem !important;
+    border-top-right-radius: 0.85rem !important;
+}
+
+/* Tarjetas individuales de mascotas */
+.card-body .bg-light.border {
+    background-color: #ffffff !important;
+    border: 1px solid var(--vet-border) !important;
+    border-left: 4px solid var(--vet-primary) !important;
+    border-radius: 0.65rem !important;
+    transition: all 0.2s ease;
+}
+
+.card-body .bg-light.border:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(13, 110, 253, 0.08);
+}
+
+/* Tabla de citas: mayor contraste y lectura */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    border-bottom: 2px solid var(--vet-border);
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.93rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fbff;
+}
+
+/* Badges de estado más nítidos */
+.badge {
+    padding: 0.45em 0.75em;
+    font-weight: 600;
     letter-spacing: 0.03em;
-    color: #555;
+    border-radius: 0.45rem;
+}
+
+/* Botones e inputs más cómodos */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.83rem;
+}
+
+.form-control, .form-select {
+    border-radius: 0.55rem;
+    border-color: #cbd5e1;
+    padding: 0.55rem 0.85rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--vet-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Modales más limpios */
+.modal-content {
+    border: none;
+    border-radius: 0.9rem;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+}
+
+.modal-header {
+    background-color: #f8fafc;
+    border-bottom: 1px solid var(--vet-border);
+    border-top-left-radius: 0.9rem;
+    border-top-right-radius: 0.9rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--vet-border);
+}
+
+/* Alertas con borde izquierdo destacado */
+.alert {
+    border: none;
+    border-left: 4px solid;
+    border-radius: 0.6rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.alert-success {
+    border-left-color: #198754;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
 }

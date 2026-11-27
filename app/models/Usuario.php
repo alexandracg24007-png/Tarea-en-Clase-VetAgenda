@@ -21,4 +21,14 @@ class Usuario {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    public function crearCliente($nombre, $email, $passwordHash) {
+        $query = "INSERT INTO " . $this->table . " (nombre, email, password_hash, rol) 
+                  VALUES (:nombre, :email, :password_hash, 'cliente')";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':nombre', $nombre, PDO::PARAM_STR);
+        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+        $stmt->bindParam(':password_hash', $passwordHash, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
 }

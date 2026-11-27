@@ -37,5 +37,13 @@
         </div>
     </div>
 </div>
+<div class="text-center mt-3">
+    <p>¿No tienes una cuenta?</p>
 
+    <a href="index.php?action=registro"
+       class="btn btn-outline-primary w-100">
+        <i class="bi bi-person-plus"></i>
+        Registrarse
+    </a>
+</div>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
