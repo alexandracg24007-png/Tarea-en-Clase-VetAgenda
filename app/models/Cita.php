@@ -98,4 +98,15 @@ class Cita {
         $stmt->bindParam(':id', $idCita, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    // [Sprint 3 - RF06]: Guardar nota clínica y marcar la cita como atendida
+    public function atender($idCita, $notaClinica) {
+        $query = "UPDATE " . $this->table . " 
+                  SET nota_clinica = :nota_clinica, estado = 'atendida' 
+                  WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':nota_clinica', $notaClinica, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $idCita, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

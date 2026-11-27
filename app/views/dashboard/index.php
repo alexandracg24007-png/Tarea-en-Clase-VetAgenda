@@ -1,6 +1,6 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
-<!-- Alertas de respuesta (RF03 Cliente y RF05 Recepcionista) -->
+<!-- Alertas por URL (RF03 Cliente, RF05 Recepcionista, RF06 Veterinario) -->
 <?php if (isset($_GET['success'])): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i>
@@ -9,6 +9,7 @@
                 'cita_agendada'      => '¡Cita solicitada correctamente! Su estado actual es <strong>Pendiente</strong>.',
                 'estado_actualizado' => 'El estado de la cita fue actualizado correctamente.',
                 'cita_reagendada'    => 'La cita fue reagendada y confirmada correctamente.',
+                'cita_atendida'      => 'La cita fue marcada como atendida y la nota clínica quedó guardada.',
                 default              => 'Operación realizada con éxito.'
             };
         ?>
@@ -31,6 +32,25 @@
     </div>
 <?php endif; ?>
 
+<!-- Alertas por Sesión (RF02 Registro de Mascota) -->
+<?php if (!empty($_SESSION['exito'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <?= htmlspecialchars($_SESSION['exito']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    <?php unset($_SESSION['exito']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <?= htmlspecialchars($_SESSION['error']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-0">Panel de Gestión de Citas</h3>
@@ -39,11 +59,11 @@
 
     <?php if ($usuario['rol'] === 'cliente'): ?>
         <div class="d-flex gap-2">
-            <!-- TODO [Sprint 2 - RF02]: Conectar este botón a un modal o vista para registrar mascota -->
-            <button class="btn btn-outline-primary btn-sm" onclick="mostrarAlertaSprint('Sprint 2 - RF02: Formulario de nueva mascota')">
+            <!-- RF02: Botón conectado al Modal Nueva Mascota -->
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaMascota">
                 <i class="bi bi-plus-circle me-1"></i> Nueva Mascota
             </button>
-            <!-- RF03: Botón conectado al Modal -->
+            <!-- RF03: Botón conectado al Modal Solicitar Cita -->
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalSolicitarCita">
                 <i class="bi bi-calendar-plus me-1"></i> Solicitar Cita
             </button>
@@ -165,9 +185,22 @@
                                     <?php else: ?>
                                         <span class="small text-muted">Sin acciones disponibles</span>
                                     <?php endif; ?>
+
                                 <?php elseif ($usuario['rol'] === 'veterinario'): ?>
-                                    <!-- TODO [Sprint 3 - RF06]: Conectar modal para registrar diagnóstico y marcar atendida -->
-                                    <button class="btn btn-sm btn-outline-primary" onclick="mostrarAlertaSprint('Sprint 3 - RF06: Atender cita #<?= $c['id'] ?>')">Atender</button>
+                                    <?php if ($c['estado'] === 'confirmada' || $c['estado'] === 'pendiente'): ?>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalAtenderCita"
+                                                data-id="<?= (int)$c['id'] ?>"
+                                                data-mascota="<?= htmlspecialchars($c['mascota']) ?>"
+                                                onclick="prepararAtender(this)">
+                                            <i class="bi bi-clipboard2-pulse"></i> Atender
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="small text-muted"><?= htmlspecialchars($c['nota_clinica'] ?? 'Sin notas') ?></span>
+                                    <?php endif; ?>
+
                                 <?php else: ?>
                                     <span class="small text-muted"><?= htmlspecialchars($c['nota_clinica'] ?? 'Sin notas') ?></span>
                                 <?php endif; ?>
@@ -180,8 +213,55 @@
     </div>
 </div>
 
-<!-- MODAL RF03: Solicitar Cita (Solo visible para clientes) -->
+<!-- MODALES CLIENTE (RF02 Nueva Mascota y RF03 Solicitar Cita) -->
 <?php if ($usuario['rol'] === 'cliente'): ?>
+
+<!-- MODAL RF02: Nueva Mascota -->
+<div class="modal fade" id="modalNuevaMascota" tabindex="-1" aria-labelledby="modalNuevaMascotaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalNuevaMascotaLabel">
+                    <i class="bi bi-plus-circle text-primary me-2"></i>Registrar Nueva Mascota
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="index.php?action=registrar_mascota" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="mascota_nombre" class="form-label fw-semibold">Nombre de la mascota</label>
+                        <input type="text" class="form-control" id="mascota_nombre" name="nombre" placeholder="Ej: Max" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mascota_especie" class="form-label fw-semibold">Especie</label>
+                        <select class="form-select" id="mascota_especie" name="especie" required>
+                            <option value="">Seleccione...</option>
+                            <option value="Perro">Perro</option>
+                            <option value="Gato">Gato</option>
+                            <option value="Ave">Ave</option>
+                            <option value="Conejo">Conejo</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mascota_raza" class="form-label fw-semibold">Raza</label>
+                        <input type="text" class="form-control" id="mascota_raza" name="raza" placeholder="Ej: Labrador, Siamés, Mestizo..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mascota_edad" class="form-label fw-semibold">Edad (en años)</label>
+                        <input type="number" class="form-control" id="mascota_edad" name="edad" min="0" max="40" placeholder="Ej: 2" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Mascota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RF03: Solicitar Cita -->
 <div class="modal fade" id="modalSolicitarCita" tabindex="-1" aria-labelledby="modalSolicitarCitaLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -198,7 +278,6 @@
                             Debes registrar al menos una mascota antes de solicitar una cita.
                         </div>
                     <?php else: ?>
-                        <!-- 1. Mascota -->
                         <div class="mb-3">
                             <label for="id_mascotas" class="form-label fw-semibold">Mascota</label>
                             <select class="form-select" id="id_mascotas" name="id_mascotas" required>
@@ -211,7 +290,6 @@
                             </select>
                         </div>
 
-                        <!-- 2. Veterinario -->
                         <div class="mb-3">
                             <label for="id_veterinario" class="form-label fw-semibold">Veterinario</label>
                             <select class="form-select" id="id_veterinario" name="id_veterinario" required>
@@ -224,13 +302,11 @@
                             </select>
                         </div>
 
-                        <!-- 3. Fecha -->
                         <div class="mb-3">
                             <label for="fecha" class="form-label fw-semibold">Fecha</label>
                             <input type="date" class="form-control" id="fecha" name="fecha" min="<?= date('Y-m-d') ?>" required>
                         </div>
 
-                        <!-- 4. Hora -->
                         <div class="mb-3">
                             <label for="hora" class="form-label fw-semibold">Hora Disponible</label>
                             <select class="form-select" id="hora" name="hora" required>
@@ -238,7 +314,6 @@
                             </select>
                         </div>
 
-                        <!-- 5. Motivo -->
                         <div class="mb-3">
                             <label for="motivo" class="form-label fw-semibold">Motivo de la consulta</label>
                             <textarea class="form-control" id="motivo" name="motivo" rows="3" placeholder="Describe brevemente el motivo..." required></textarea>
@@ -339,6 +414,46 @@ async function cargarHorasReagendar() {
         console.error('Error al cargar horas para reagendar:', error);
         selectHora.innerHTML = '<option value="">Error al cargar horarios</option>';
     }
+}
+</script>
+<?php endif; ?>
+
+<!-- MODAL RF06: Atender Cita y Registrar Nota Clínica (Solo veterinarios) -->
+<?php if ($usuario['rol'] === 'veterinario'): ?>
+<div class="modal fade" id="modalAtenderCita" tabindex="-1" aria-labelledby="modalAtenderCitaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="index.php?action=atenderCita" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalAtenderCitaLabel">
+                        <i class="bi bi-clipboard2-pulse text-primary me-2"></i>Registrar Atención Clínica
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id_cita" id="atender_id_cita">
+                    <p class="small text-muted mb-3">
+                        Paciente: <strong id="atender_info_mascota" class="text-dark"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label for="nota_clinica" class="form-label">Diagnóstico / Tratamiento *</label>
+                        <textarea class="form-control" id="nota_clinica" name="nota_clinica" rows="4" placeholder="Escribe aquí el diagnóstico y el tratamiento indicado..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar y Marcar Atendida</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function prepararAtender(btn) {
+    document.getElementById('atender_id_cita').value = btn.getAttribute('data-id');
+    document.getElementById('atender_info_mascota').textContent = btn.getAttribute('data-mascota');
+    document.getElementById('nota_clinica').value = '';
 }
 </script>
 <?php endif; ?>

@@ -34,6 +34,34 @@ class CitaController {
         require __DIR__ . '/../views/dashboard/index.php';
     }
 
+    // [Sprint 2 - RF02]: Registrar nueva mascota (Cliente)
+    public function registrarMascota() {
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'cliente') {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nombre   = trim($_POST['nombre'] ?? '');
+            $especie  = trim($_POST['especie'] ?? '');
+            $raza     = trim($_POST['raza'] ?? '');
+            $edad     = $_POST['edad'] ?? '';
+            $id_dueno = $_SESSION['usuario']['id'];
+
+            if (empty($nombre) || empty($especie) || empty($raza) || $edad === '' || (int)$edad < 0) {
+                header('Location: index.php?action=dashboard&error=campos_vacios');
+                exit;
+            }
+
+            if ($this->mascotaModel->crear($nombre, $especie, $raza, (int)$edad, $id_dueno)) {
+                header('Location: index.php?action=dashboard&success=mascota_registrada');
+            } else {
+                header('Location: index.php?action=dashboard&error=error_guardar');
+            }
+            exit;
+        }
+    }
+
     // [Sprint 2 - RF03]: Devuelve las horas libres para el calendario (AJAX)
     public function horasDisponibles() {
         header('Content-Type: application/json');
@@ -95,6 +123,7 @@ class CitaController {
             exit;
         }
     }
+
     // [Sprint 3 - RF05]: Confirmar o cancelar cita (Recepcionista)
     public function cambiarEstadoCita() {
         if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'recepcionista') {
@@ -147,6 +176,31 @@ class CitaController {
 
             if ($this->citaModel->reagendar($idCita, $nuevaFechaHora)) {
                 header('Location: index.php?action=dashboard&success=cita_reagendada');
+            } else {
+                header('Location: index.php?action=dashboard&error=error_guardar');
+            }
+            exit;
+        }
+    }
+
+    // [Sprint 3 - RF06]: Registrar atención clínica y marcar como atendida (Veterinario)
+    public function atenderCita() {
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'veterinario') {
+            header('Location: index.php?action=login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $idCita      = $_POST['id_cita'] ?? '';
+            $notaClinica = trim($_POST['nota_clinica'] ?? '');
+
+            if (empty($idCita) || empty($notaClinica)) {
+                header('Location: index.php?action=dashboard&error=campos_vacios');
+                exit;
+            }
+
+            if ($this->citaModel->atender($idCita, $notaClinica)) {
+                header('Location: index.php?action=dashboard&success=cita_atendida');
             } else {
                 header('Location: index.php?action=dashboard&error=error_guardar');
             }
